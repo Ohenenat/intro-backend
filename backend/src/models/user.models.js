@@ -1,4 +1,5 @@
 import mongoose , { Schema } from 'mongoose';
+import bcrypt from 'bcrypt';
 
 const userSchema = new Schema({
     username: {
@@ -14,7 +15,7 @@ const userSchema = new Schema({
         type: String,
         required: true,
         minLength: 6,
-        maxLength: 50
+        maxLength: 100
     },
     email: {
         type: String,
@@ -31,6 +32,20 @@ const userSchema = new Schema({
     }
     
 });
+
+// Hash the password before saving the user
+userSchema.pre('save', async function() {
+    if (!this.isModified('password')) {
+        return;
+    }
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+});
+
+// Method to compare the entered password with the hashed password
+userSchema.methods.comparePassword = async function (password) {
+    return await bcrypt.compare(password, this.password);
+};
 
 const User = mongoose.model('User', userSchema);
 
